@@ -86,6 +86,46 @@ def cmd_info(args: argparse.Namespace) -> int:
         conn.close()
 
 
+def cmd_recall(args: argparse.Namespace) -> int:
+    """Handle recall command."""
+    from pathlib import Path
+
+    from docpack.recall import recall
+    from docpack.storage import init_db
+
+    docpack_path = Path(args.docpack)
+    if not docpack_path.exists():
+        print(f"Error: File not found: {docpack_path}", file=sys.stderr)
+        return 1
+
+    conn = init_db(str(docpack_path))
+    try:
+        results = recall(
+            conn,
+            args.query,
+            k=args.k,
+            model_name=args.model,
+            threshold=args.threshold,
+        )
+
+        if not results:
+            print("No results found.")
+            return 0
+
+        for i, r in enumerate(results, 1):
+            print(f"\n[{i}] {r.file_path} (chunk {r.chunk_index}) — score: {r.score:.4f}")
+            print("-" * 60)
+            # Truncate long text for display
+            text = r.text
+            if len(text) > 500 and not args.full:
+                text = text[:500] + "..."
+            print(text)
+
+        return 0
+    finally:
+        conn.close()
+
+
 def cmd_not_implemented(name: str) -> int:
     """Placeholder for unimplemented commands."""
     print(f"Command '{name}' not yet implemented.", file=sys.stderr)
@@ -153,9 +193,46 @@ def main() -> int:
         help="Path to .docpack file",
     )
 
+    # recall
+    recall_parser = subparsers.add_parser(
+        "recall",
+        help="Semantic search against a docpack",
+    )
+    recall_parser.add_argument(
+        "docpack",
+        help="Path to .docpack file",
+    )
+    recall_parser.add_argument(
+        "query",
+        help="Natural language search query",
+    )
+    recall_parser.add_argument(
+        "-k",
+        type=int,
+        default=5,
+        help="Number of results to return (default: 5)",
+    )
+    recall_parser.add_argument(
+        "-m",
+        "--model",
+        default="google/embeddinggemma-300m",
+        help="Embedding model (must match freeze model)",
+    )
+    recall_parser.add_argument(
+        "-t",
+        "--threshold",
+        type=float,
+        default=None,
+        help="Minimum similarity score (0-1)",
+    )
+    recall_parser.add_argument(
+        "--full",
+        action="store_true",
+        help="Show full chunk text (don't truncate)",
+    )
+
     # Placeholders for future commands
     subparsers.add_parser("deck", help="Launch the Flight Deck (TUI)")
-    subparsers.add_parser("recall", help="Semantic search against a docpack")
     subparsers.add_parser("serve", help="Expose docpack via MCP")
     subparsers.add_parser("run", help="Freeze + serve (one-shot)")
 
@@ -169,6 +246,8 @@ def main() -> int:
         return cmd_freeze(args)
     elif args.command == "info":
         return cmd_info(args)
+    elif args.command == "recall":
+        return cmd_recall(args)
     else:
         return cmd_not_implemented(args.command)
 
