@@ -165,6 +165,60 @@ def cmd_recall(args: argparse.Namespace) -> int:
         conn.close()
 
 
+def cmd_serve(args: argparse.Namespace) -> int:
+    """Handle serve command."""
+    import asyncio
+    from pathlib import Path
+
+    from docpack.serve import run_server
+
+    docpack_path = Path(args.docpack)
+    if not docpack_path.exists():
+        print(f"Error: File not found: {docpack_path}", file=sys.stderr)
+        return 1
+
+    try:
+        asyncio.run(run_server(str(docpack_path)))
+        return 0
+    except KeyboardInterrupt:
+        return 0
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+
+def cmd_run(args: argparse.Namespace) -> int:
+    """Handle run command (freeze + serve)."""
+    import asyncio
+
+    from docpack.ingest import freeze
+    from docpack.serve import run_server
+
+    try:
+        # Freeze to temp file
+        print(f"Freezing {args.target}...", file=sys.stderr)
+        output_path = freeze(
+            args.target,
+            use_temp=True,
+            verbose=args.verbose,
+            embedding_model=args.model,
+        )
+        print(f"Created: {output_path}", file=sys.stderr)
+        print("Starting MCP server...", file=sys.stderr)
+
+        # Serve it
+        asyncio.run(run_server(str(output_path)))
+        return 0
+    except KeyboardInterrupt:
+        return 0
+    except FileNotFoundError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+
 def cmd_not_implemented(name: str) -> int:
     """Placeholder for unimplemented commands."""
     print(f"Command '{name}' not yet implemented.", file=sys.stderr)
@@ -270,10 +324,40 @@ def main() -> int:
         help="Show full chunk text (don't truncate)",
     )
 
-    # Placeholders for future commands
+    # serve
+    serve_parser = subparsers.add_parser(
+        "serve",
+        help="Expose docpack via MCP",
+    )
+    serve_parser.add_argument(
+        "docpack",
+        help="Path to .docpack file",
+    )
+
+    # run
+    run_parser = subparsers.add_parser(
+        "run",
+        help="Freeze + serve (one-shot)",
+    )
+    run_parser.add_argument(
+        "target",
+        help="Path or URL to ingest",
+    )
+    run_parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Print progress information",
+    )
+    run_parser.add_argument(
+        "-m",
+        "--model",
+        default=None,
+        help="Embedding model (default: google/embeddinggemma-300m)",
+    )
+
+    # Placeholder for future command
     subparsers.add_parser("deck", help="Launch the Flight Deck (TUI)")
-    subparsers.add_parser("serve", help="Expose docpack via MCP")
-    subparsers.add_parser("run", help="Freeze + serve (one-shot)")
 
     args = parser.parse_args()
 
@@ -287,6 +371,10 @@ def main() -> int:
         return cmd_info(args)
     elif args.command == "recall":
         return cmd_recall(args)
+    elif args.command == "serve":
+        return cmd_serve(args)
+    elif args.command == "run":
+        return cmd_run(args)
     else:
         return cmd_not_implemented(args.command)
 
