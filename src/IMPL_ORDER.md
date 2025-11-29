@@ -58,7 +58,7 @@ The project deps are managed with `uv` which is fucking awesome.
 
 ---
 
-4. **Embedding Engine** — meaning gets attached  (🮱 DONE)
+4. **Embedding Engine** — meaning gets attached (🮱 DONE)
 
     Now that you have chunks, you can embed them.
     - embed.py
@@ -72,7 +72,7 @@ The project deps are managed with `uv` which is fucking awesome.
 
 ---
 
-5. **Vector Search** — semantic recall
+5. **Vector Search** — semantic recall (🮱 DONE)
 
     This is where the system becomes “alive.”
     - recall.py
