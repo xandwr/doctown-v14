@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from docpack.chunk import chunk_all
+from docpack.embed import embed_all
 from docpack.storage import init_db, insert_file, set_metadata
 
 from .sources import DirectorySource, URLSource, ZipSource
@@ -89,6 +90,8 @@ def freeze(
     use_temp: bool = False,
     verbose: bool = False,
     skip_chunking: bool = False,
+    skip_embedding: bool = False,
+    embedding_model: str | None = None,
 ) -> Path:
     """
     Freeze a target into a .docpack file.
@@ -103,6 +106,8 @@ def freeze(
         use_temp: If True, create in system temp dir (auto-cleanup)
         verbose: Print progress information
         skip_chunking: If True, skip the chunking step (raw ingestion only)
+        skip_embedding: If True, skip the embedding step
+        embedding_model: HuggingFace model to use for embeddings
 
     Returns:
         Path to created .docpack file
@@ -194,11 +199,20 @@ def freeze(
                 chunk_count = chunk_all(conn, verbose=verbose)
                 if verbose:
                     print(f"Created {chunk_count} chunks")
+
+                # Embed chunks
+                if not skip_embedding and chunk_count > 0:
+                    if verbose:
+                        print("\nEmbedding chunks...")
+                    embed_kwargs = {"verbose": verbose}
+                    if embedding_model:
+                        embed_kwargs["model_name"] = embedding_model
+                    embed_all(conn, **embed_kwargs)
             else:
                 set_metadata(conn, "stage", "frozen")  # No chunks yet
 
             if verbose:
-                print(f"Output: {output_path}")
+                print(f"\nOutput: {output_path}")
 
     finally:
         conn.close()

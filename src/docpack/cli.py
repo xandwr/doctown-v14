@@ -33,6 +33,8 @@ def cmd_freeze(args: argparse.Namespace) -> int:
             use_temp=args.temp,
             verbose=args.verbose,
             skip_chunking=args.no_chunk,
+            skip_embedding=args.no_embed,
+            embedding_model=args.model,
         )
         if not args.verbose:
             print(f"Created: {output_path}")
@@ -128,6 +130,17 @@ def main() -> int:
         "--no-chunk",
         action="store_true",
         help="Skip chunking (raw ingestion only)",
+    )
+    freeze_parser.add_argument(
+        "--no-embed",
+        action="store_true",
+        help="Skip embedding (chunking only)",
+    )
+    freeze_parser.add_argument(
+        "-m",
+        "--model",
+        default=None,
+        help="Embedding model (default: google/embeddinggemma-300m)",
     )
 
     # info

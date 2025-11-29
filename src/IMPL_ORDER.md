@@ -42,7 +42,7 @@ The project deps are managed with `uv` which is fucking awesome.
 
 ---
 
-3. **Chunking** (paragraph splitter) — structure and granularity
+3. **Chunking** (paragraph splitter) — structure and granularity  (🮱 DONE)
 
     Now you can read the file contents from the DB and produce chunks.
     - chunk.py
@@ -58,7 +58,7 @@ The project deps are managed with `uv` which is fucking awesome.
 
 ---
 
-4. **Embedding Engine** — meaning gets attached
+4. **Embedding Engine** — meaning gets attached  (🮱 DONE)
 
     Now that you have chunks, you can embed them.
     - embed.py
