@@ -8,12 +8,14 @@ Commands:
     serve      Expose docpack via MCP for AI agents
     info       Inspect metadata, stats, counts
     run        Freeze + serve a temp docpack (one-shot)
+    task       Execute a natural language task against a docpack
 
 Examples:
     docpack freeze ./my-project -o project.docpack
     docpack freeze https://github.com/user/repo/archive/main.zip
     docpack info project.docpack
     docpack recall project.docpack "where is jwt validation?"
+    docpack task project.docpack "find all TODO comments and summarize them"
 """
 
 from __future__ import annotations
@@ -178,6 +180,10 @@ def cmd_serve(args: argparse.Namespace) -> int:
         return 1
 
     try:
+        print(f"Serving: {docpack_path}", file=sys.stderr)
+        print("MCP server ready on stdio (waiting for client connection)", file=sys.stderr)
+        print("Tip: This command is meant to be invoked by an MCP client.", file=sys.stderr)
+        print("     Press Ctrl+C to exit.", file=sys.stderr)
         asyncio.run(run_server(str(docpack_path)))
         return 0
     except KeyboardInterrupt:
@@ -204,9 +210,11 @@ def cmd_run(args: argparse.Namespace) -> int:
             embedding_model=args.model,
         )
         print(f"Created: {output_path}", file=sys.stderr)
-        print("Starting MCP server...", file=sys.stderr)
+        print("MCP server ready on stdio (waiting for client connection)", file=sys.stderr)
+        print("Tip: This command is meant to be invoked by an MCP client.", file=sys.stderr)
+        print("     Press Ctrl+C to exit.", file=sys.stderr)
 
-        # Serve it
+        # Serve it - blocks waiting for MCP protocol messages on stdin
         asyncio.run(run_server(str(output_path)))
         return 0
     except KeyboardInterrupt:
@@ -226,6 +234,84 @@ def cmd_deck(args: argparse.Namespace) -> int:
     app = FlightDeck()
     app.run()
     return 0
+
+
+def cmd_task(args: argparse.Namespace) -> int:
+    """Handle task command - execute a workflow against a docpack."""
+    import asyncio
+    import json
+    from pathlib import Path
+
+    from docpack.workflow import run_task
+
+    docpack_path = Path(args.docpack)
+    if not docpack_path.exists():
+        print(f"Error: File not found: {docpack_path}", file=sys.stderr)
+        return 1
+
+    try:
+        if args.verbose:
+            print(f"Running task: {args.task}", file=sys.stderr)
+            print(f"Docpack: {docpack_path}", file=sys.stderr)
+            print(file=sys.stderr)
+
+        result = asyncio.run(
+            run_task(
+                str(docpack_path),
+                args.task,
+                model=args.model,
+            )
+        )
+
+        if args.verbose:
+            print(f"Status: {result.status}", file=sys.stderr)
+            print(f"Duration: {result.duration_ms}ms", file=sys.stderr)
+            print(f"Steps: {len(result.step_results)}", file=sys.stderr)
+            print(file=sys.stderr)
+
+            for sr in result.step_results:
+                status = "[OK]" if sr.success else "[FAIL]"
+                print(f"  {status} {sr.step.tool}: {sr.step.description}", file=sys.stderr)
+
+            print(file=sys.stderr)
+
+        # Output format
+        if args.format == "json":
+            print(result.to_json(indent=2))
+        else:
+            # Human-readable output
+            print(f"Task: {result.task}")
+            print(f"Status: {result.status}")
+            print()
+
+            if result.error:
+                print(f"Error: {result.error}")
+                return 1
+
+            print("Output:")
+            for key, value in result.output.items():
+                print(f"\n## {key}")
+                if isinstance(value, dict):
+                    print(json.dumps(value, indent=2, default=str))
+                elif isinstance(value, list):
+                    for item in value[:10]:  # Limit output
+                        if isinstance(item, dict):
+                            print(f"  - {item}")
+                        else:
+                            print(f"  - {item}")
+                    if len(value) > 10:
+                        print(f"  ... and {len(value) - 10} more")
+                else:
+                    print(value)
+
+        return 0 if result.status in ("completed", "partial") else 1
+
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        if args.verbose:
+            import traceback
+            traceback.print_exc()
+        return 1
 
 
 def cmd_not_implemented(name: str) -> int:
@@ -373,6 +459,39 @@ def main() -> int:
         help="Path to .docpack file (optional, shows README if omitted)",
     )
 
+    # task
+    task_parser = subparsers.add_parser(
+        "task",
+        help="Execute a natural language task against a docpack",
+    )
+    task_parser.add_argument(
+        "docpack",
+        help="Path to .docpack file",
+    )
+    task_parser.add_argument(
+        "task",
+        help="Natural language task description",
+    )
+    task_parser.add_argument(
+        "-f",
+        "--format",
+        choices=["json", "text"],
+        default="text",
+        help="Output format (default: text)",
+    )
+    task_parser.add_argument(
+        "-m",
+        "--model",
+        default=None,
+        help="LLM model for planning (default: qwen3:4b via Ollama)",
+    )
+    task_parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Show execution details",
+    )
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -391,6 +510,8 @@ def main() -> int:
         return cmd_run(args)
     elif args.command == "deck":
         return cmd_deck(args)
+    elif args.command == "task":
+        return cmd_task(args)
     else:
         return cmd_not_implemented(args.command)
 
