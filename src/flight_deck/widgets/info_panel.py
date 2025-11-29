@@ -101,7 +101,7 @@ class InfoPanel(Static):
 
         format_ver = metadata.get("format_version", "N/A")
         docpack_ver = metadata.get("docpack_version", "N/A")
-        created = metadata.get("created_at", "N/A")
+        created = self._format_timestamp(metadata.get("created_at", ""))
 
         version_section.mount(Label(f"Format: {format_ver}", classes="stat-row"))
         version_section.mount(Label(f"Docpack: {docpack_ver}", classes="stat-row"))
@@ -130,7 +130,9 @@ class InfoPanel(Static):
         model = metadata.get("embedding_model", "N/A")
         dims = metadata.get("embedding_dims", "N/A")
 
-        embed_section.mount(Label(f"Model: {model}", classes="stat-row"))
+        # Shorten model name for display (remove provider prefix)
+        model_display = model.split("/")[-1] if model and "/" in model else model
+        embed_section.mount(Label(f"Model: {model_display}", classes="stat-row"))
         embed_section.mount(Label(f"Dimensions: {dims}", classes="stat-row"))
 
         # Update source section
@@ -151,6 +153,19 @@ class InfoPanel(Static):
             return f"{size_bytes / (1024 * 1024):.1f} MB"
         else:
             return f"{size_bytes / (1024 * 1024 * 1024):.1f} GB"
+
+    def _format_timestamp(self, iso_timestamp: str) -> str:
+        """Format ISO timestamp for display (YYYY-MM-DD HH:MM)."""
+        if not iso_timestamp:
+            return "N/A"
+        try:
+            # Parse ISO format and return friendly format
+            from datetime import datetime
+
+            dt = datetime.fromisoformat(iso_timestamp.replace("Z", "+00:00"))
+            return dt.strftime("%Y-%m-%d %H:%M")
+        except (ValueError, AttributeError):
+            return iso_timestamp[:16] if len(iso_timestamp) > 16 else iso_timestamp
 
     def clear(self) -> None:
         """Clear the info panel."""

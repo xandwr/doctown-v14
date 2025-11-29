@@ -10,6 +10,7 @@ from .file_viewer import FileViewer
 from .freeze_progress import FreezeProgress
 from .info_panel import InfoPanel
 from .nav_bar import NavBar
+from .notes_panel import MarginaliaItem, NotesPanel
 from .recall_search import RecallSearch, SearchResult
 from .rocket_progress import RocketProgress
 from .top_bar import TopBar
@@ -21,7 +22,9 @@ __all__ = [
     "FileViewer",
     "FreezeProgress",
     "InfoPanel",
+    "MarginaliaItem",
     "NavBar",
+    "NotesPanel",
     "RecallSearch",
     "RocketProgress",
     "SearchResult",

@@ -114,13 +114,21 @@ class RecallSearch(Static):
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self._conn = None  # Database connection
+        self._db_path: str | None = None  # Database path for thread-safe access
         self._results: list[SearchResult] = []
         self._searching = False
 
     def set_connection(self, conn) -> None:
-        """Set the database connection for searches."""
-        self._conn = conn
+        """Set the database connection for searches.
+
+        We extract the path from the connection to allow opening
+        fresh connections in worker threads (SQLite requirement).
+        """
+        # Get the database path from the connection
+        cursor = conn.execute("PRAGMA database_list")
+        row = cursor.fetchone()
+        if row:
+            self._db_path = row[2]  # Third column is the file path
 
     def compose(self) -> ComposeResult:
         with Vertical():
@@ -139,33 +147,39 @@ class RecallSearch(Static):
     def on_search_submitted(self, event: Input.Submitted) -> None:
         """Handle search submission."""
         query = event.value.strip()
-        if query and self._conn:
+        if query and self._db_path:
             self._do_search(query)
 
     @work(thread=True)
     def _do_search(self, query: str) -> None:
         """Perform the search in a background thread."""
         from docpack.recall import recall
+        from docpack.storage import init_db
 
         self._searching = True
-        self.call_from_thread(self._update_status, f"Searching for: {query}...")
+        self.app.call_from_thread(self._update_status, f"Searching for: {query}...")
 
         try:
-            results = recall(self._conn, query, k=10)
-            search_results = [
-                SearchResult(
-                    chunk_id=r.chunk_id,
-                    file_id=r.file_id,
-                    file_path=r.file_path,
-                    chunk_index=r.chunk_index,
-                    text=r.text,
-                    score=r.score,
-                )
-                for r in results
-            ]
-            self.call_from_thread(self._show_results, search_results, query)
+            # Open a fresh connection in this thread (SQLite requirement)
+            conn = init_db(self._db_path)
+            try:
+                results = recall(conn, query, k=10)
+                search_results = [
+                    SearchResult(
+                        chunk_id=r.chunk_id,
+                        file_id=r.file_id,
+                        file_path=r.file_path,
+                        chunk_index=r.chunk_index,
+                        text=r.text,
+                        score=r.score,
+                    )
+                    for r in results
+                ]
+                self.app.call_from_thread(self._show_results, search_results, query)
+            finally:
+                conn.close()
         except Exception as e:
-            self.call_from_thread(self._show_error, str(e))
+            self.app.call_from_thread(self._show_error, str(e))
         finally:
             self._searching = False
 

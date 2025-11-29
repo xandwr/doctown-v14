@@ -20,6 +20,7 @@ from flight_deck.widgets import (
     FileViewer,
     InfoPanel,
     NavBar,
+    NotesPanel,
     RecallSearch,
     SearchResult,
 )
@@ -36,6 +37,7 @@ class ViewerScreen(Screen):
         Binding("f1", "show_info", "Info"),
         Binding("f2", "show_files", "Files"),
         Binding("f3", "show_search", "Search"),
+        Binding("f4", "show_notes", "Notes"),
     ]
 
     DEFAULT_CSS = """
@@ -101,6 +103,10 @@ class ViewerScreen(Screen):
         height: 1fr;
     }
 
+    ViewerScreen NotesPanel {
+        height: 1fr;
+    }
+
     ViewerScreen .status-bar {
         width: 100%;
         height: 1;
@@ -136,6 +142,8 @@ class ViewerScreen(Screen):
                             yield RecallSearch(id="recall-search")
                         with TabPane("Info", id="info-tab"):
                             yield InfoPanel(id="info-panel")
+                        with TabPane("Notes", id="notes-tab"):
+                            yield NotesPanel(id="notes-panel")
 
                 # Main content area
                 with Vertical(classes="content-area"):
@@ -143,7 +151,7 @@ class ViewerScreen(Screen):
 
             # Status bar
             yield Label(
-                f"📦 {self.docpack_path} | Ctrl+O: Open | Ctrl+F: Search | Ctrl+T: Toggle sidebar",
+                f"📦 {self.docpack_path} | Ctrl+O: Open | Ctrl+F: Search | F4: Notes",
                 classes="status-bar",
             )
 
@@ -173,6 +181,10 @@ class ViewerScreen(Screen):
             metadata = get_all_metadata(self._conn)
             info_panel = self.query_one("#info-panel", InfoPanel)
             info_panel.load_info(stats, metadata)
+
+            # Load notes panel (marginalia)
+            notes_panel = self.query_one("#notes-panel", NotesPanel)
+            notes_panel.set_connection(self._conn)
 
             self.notify(f"Loaded: {self.docpack_path.name}")
 
@@ -265,6 +277,26 @@ class ViewerScreen(Screen):
         """Switch to search tab."""
         tabs = self.query_one("#sidebar-tabs", TabbedContent)
         tabs.active = "search-tab"
+
+    def action_show_notes(self) -> None:
+        """Switch to notes tab."""
+        tabs = self.query_one("#sidebar-tabs", TabbedContent)
+        tabs.active = "notes-tab"
+
+    @on(NotesPanel.ItemSelected)
+    def on_notes_item_selected(self, event: NotesPanel.ItemSelected) -> None:
+        """Handle marginalia item selection - display content in main viewer."""
+        item = event.item
+        viewer = self.query_one("#file-viewer", FileViewer)
+
+        # Display the marginalia content in the file viewer
+        # Use a virtual path format for marginalia items
+        virtual_path = f"marginalia/{item.item_type}/{item.title}"
+        viewer.show_file(
+            path=virtual_path,
+            content=item.content,
+            is_binary=False,
+        )
 
     def on_unmount(self) -> None:
         """Clean up when screen is removed."""
