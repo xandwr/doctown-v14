@@ -117,7 +117,9 @@ Saved to api.docpack (4.2 MB)
 ```bash
 # Start the flight deck
 $ docpack deck api.docpack
+```
 
+```txt
 ╭─────────────────────────────────────────────────────────────╮
 │  DOCPACK FLIGHT DECK                        api.docpack     │
 ├─────────────────────────────────────────────────────────────┤
