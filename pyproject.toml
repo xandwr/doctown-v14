@@ -9,3 +9,6 @@ dependencies = [
     "textual-dev>=1.8.0",
     "textual-serve>=1.1.3",
 ]
+
+[project.scripts]
+docpack = "docpack.cli:main"
