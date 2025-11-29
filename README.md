@@ -181,7 +181,9 @@ Saved to recipes.docpack (2.1 MB)
 ```bash
 # Open the flight deck
 $ docpack deck recipes.docpack
+```
 
+```txt
 ╭─────────────────────────────────────────────────────────────╮
 │  DOCPACK FLIGHT DECK                     recipes.docpack    │
 ├─────────────────────────────────────────────────────────────┤
@@ -263,7 +265,9 @@ Saved to henderson.docpack (31.4 MB)
 ```bash
 # Open the flight deck
 $ docpack deck henderson.docpack
+```
 
+```txt
 ╭─────────────────────────────────────────────────────────────╮
 │  DOCPACK FLIGHT DECK                   henderson.docpack    │
 ├─────────────────────────────────────────────────────────────┤
@@ -364,7 +368,9 @@ Saved to health.docpack (8.3 MB)
 ```bash
 # Open the flight deck
 $ docpack deck health.docpack
+```
 
+```txt
 ╭─────────────────────────────────────────────────────────────╮
 │  DOCPACK FLIGHT DECK                      health.docpack    │
 ├─────────────────────────────────────────────────────────────┤
