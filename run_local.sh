@@ -1,0 +1,1 @@
+uv run textual run src/flight_deck/main.py
