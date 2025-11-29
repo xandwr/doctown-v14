@@ -219,6 +219,15 @@ def cmd_run(args: argparse.Namespace) -> int:
         return 1
 
 
+def cmd_deck(args: argparse.Namespace) -> int:
+    """Handle deck command."""
+    from flight_deck.app import FlightDeck
+
+    app = FlightDeck()
+    app.run()
+    return 0
+
+
 def cmd_not_implemented(name: str) -> int:
     """Placeholder for unimplemented commands."""
     print(f"Command '{name}' not yet implemented.", file=sys.stderr)
@@ -356,8 +365,13 @@ def main() -> int:
         help="Embedding model (default: google/embeddinggemma-300m)",
     )
 
-    # Placeholder for future command
-    subparsers.add_parser("deck", help="Launch the Flight Deck (TUI)")
+    # deck
+    deck_parser = subparsers.add_parser("deck", help="Launch the Flight Deck (TUI)")
+    deck_parser.add_argument(
+        "docpack",
+        nargs="?",
+        help="Path to .docpack file (optional, shows README if omitted)",
+    )
 
     args = parser.parse_args()
 
@@ -375,6 +389,8 @@ def main() -> int:
         return cmd_serve(args)
     elif args.command == "run":
         return cmd_run(args)
+    elif args.command == "deck":
+        return cmd_deck(args)
     else:
         return cmd_not_implemented(args.command)
 

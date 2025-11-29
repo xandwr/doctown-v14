@@ -1,7 +1,8 @@
 from textual.app import ComposeResult
 from textual.containers import Container
 from textual.widget import Widget
-from top_bar import TopBar
+
+from flight_deck.widgets.top_bar import TopBar
 
 
 class WindowLayout(Container):

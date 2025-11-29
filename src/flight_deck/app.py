@@ -3,9 +3,11 @@ Flight Deck - A windowed terminal UI application.
 """
 
 from pathlib import Path
+
 from textual.app import App, ComposeResult
 from textual.widgets import MarkdownViewer
-from widgets.window import WindowLayout
+
+from flight_deck.widgets.window import WindowLayout
 
 
 class FlightDeck(App):
