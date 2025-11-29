@@ -1,5 +1,6 @@
 """
 An App to show the current time.
+Placeholder, will become the flight deck.
 """
 
 from datetime import datetime
