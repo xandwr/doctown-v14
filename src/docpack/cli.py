@@ -66,20 +66,59 @@ def cmd_info(args: argparse.Namespace) -> int:
         stats = get_stats(conn)
         metadata = get_all_metadata(conn)
 
+        # Header
         print(f"Docpack: {docpack_path}")
         print(f"Size: {docpack_path.stat().st_size:,} bytes")
+
+        # Version info
+        if "format_version" in metadata or "docpack_version" in metadata:
+            print()
+            print("Version:")
+            if "format_version" in metadata:
+                print(f"  Format: {metadata['format_version']}")
+            if "docpack_version" in metadata:
+                print(f"  Docpack: {metadata['docpack_version']}")
+
+        # Timestamps
+        if "created_at" in metadata:
+            print()
+            print("Created:")
+            print(f"  {metadata['created_at']}")
+
+        # Stats
         print()
         print("Stats:")
         print(f"  Files: {stats.get('total_files', 0)}")
         print(f"  Chunks: {stats.get('total_chunks', 0)}")
         print(f"  Vectors: {stats.get('total_vectors', 0)}")
-        print(f"  Total size: {stats.get('total_size_bytes', 0):,} bytes")
+        print(f"  Content size: {stats.get('total_size_bytes', 0):,} bytes")
 
-        if metadata:
+        # Embedding info
+        if "embedding_model" in metadata:
             print()
-            print("Metadata:")
-            for key, value in sorted(metadata.items()):
-                print(f"  {key}: {value}")
+            print("Embedding:")
+            print(f"  Model: {metadata.get('embedding_model', 'N/A')}")
+            print(f"  Dimensions: {metadata.get('embedding_dims', 'N/A')}")
+
+        # Config flags
+        config_keys = [k for k in metadata if k.startswith("config.")]
+        if config_keys:
+            print()
+            print("Config:")
+            for key in sorted(config_keys):
+                short_key = key.replace("config.", "")
+                print(f"  {short_key}: {metadata[key]}")
+
+        # Source
+        if "source" in metadata:
+            print()
+            print("Source:")
+            print(f"  {metadata['source']}")
+
+        # Stage
+        if "stage" in metadata:
+            print()
+            print(f"Stage: {metadata['stage']}")
 
         return 0
     finally:

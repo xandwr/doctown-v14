@@ -9,9 +9,11 @@ chunking or embedding.
 from __future__ import annotations
 
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from docpack import FORMAT_VERSION, __version__
 from docpack.chunk import chunk_all
 from docpack.embed import embed_all
 from docpack.storage import init_db, insert_file, set_metadata
@@ -185,9 +187,20 @@ def freeze(
                     print(f"  [{status}] {vfile.path} ({vfile.size} bytes)")
 
             # Store metadata
+            set_metadata(conn, "format_version", FORMAT_VERSION)
+            set_metadata(conn, "docpack_version", __version__)
+            set_metadata(conn, "created_at", datetime.now(timezone.utc).isoformat())
             set_metadata(conn, "source", target)
             set_metadata(conn, "file_count", str(file_count))
             set_metadata(conn, "total_bytes", str(total_bytes))
+
+            # Store config flags
+            if skip_chunking:
+                set_metadata(conn, "config.skip_chunking", "true")
+            if skip_embedding:
+                set_metadata(conn, "config.skip_embedding", "true")
+            if embedding_model:
+                set_metadata(conn, "config.embedding_model", embedding_model)
 
             if verbose:
                 print(f"\nFroze {file_count} files ({total_bytes:,} bytes)")
@@ -270,6 +283,9 @@ def freeze_to_connection(
                 status = "binary" if is_binary else "text"
                 print(f"  [{status}] {vfile.path} ({vfile.size} bytes)")
 
+        set_metadata(conn, "format_version", FORMAT_VERSION)
+        set_metadata(conn, "docpack_version", __version__)
+        set_metadata(conn, "created_at", datetime.now(timezone.utc).isoformat())
         set_metadata(conn, "source", target)
         set_metadata(conn, "file_count", str(file_count))
         set_metadata(conn, "total_bytes", str(total_bytes))

@@ -88,7 +88,7 @@ The project deps are managed with `uv` which is fucking awesome.
 
 ---
 
-6. **Metadata + Model Tracking** — polish pass
+6. **Metadata + Model Tracking** — polish pass (🮱 DONE)
 
     Add:
     - model name
