@@ -11,7 +11,7 @@ from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Vertical, VerticalScroll
 from textual.message import Message
-from textual.widgets import Input, Label, ListItem, ListView, Static
+from textual.widgets import Button, Input, Label, Static
 
 
 @dataclass
@@ -24,6 +24,8 @@ class SearchResult:
     chunk_index: int
     text: str
     score: float
+    start_char: int | None = None
+    end_char: int | None = None
 
 
 class RecallSearch(Static):
@@ -172,6 +174,8 @@ class RecallSearch(Static):
                         chunk_index=r.chunk_index,
                         text=r.text,
                         score=r.score,
+                        start_char=r.start_char,
+                        end_char=r.end_char,
                     )
                     for r in results
                 ]
@@ -220,71 +224,56 @@ class RecallSearch(Static):
         container.mount(Label(f"Search failed: {error}", classes="no-results"))
 
 
-class ResultItem(Static):
-    """A single search result item."""
+class ResultItem(Button):
+    """A single search result item styled as a button."""
 
     DEFAULT_CSS = """
     ResultItem {
         width: 100%;
         height: auto;
-        padding: 1;
+        min-height: 3;
+        padding: 0 1;
+        margin: 0;
+        border: none;
         border-bottom: solid $primary-darken-3;
+        background: $surface;
+        text-align: left;
     }
 
     ResultItem:hover {
         background: $primary-darken-2;
+        border: none;
+        border-bottom: solid $primary-darken-3;
     }
 
     ResultItem:focus {
-        background: $primary;
+        background: $primary-darken-1;
+        border: none;
+        border-bottom: solid $primary-darken-3;
     }
 
-    ResultItem .result-header {
-        width: 100%;
-    }
-
-    ResultItem .result-path {
-        color: $primary;
-        text-style: bold;
-    }
-
-    ResultItem .result-score {
-        color: $success;
-    }
-
-    ResultItem .result-text {
-        width: 100%;
-        color: $text-muted;
-        padding-top: 1;
+    ResultItem.-active {
+        border: none;
+        border-bottom: solid $primary-darken-3;
     }
     """
 
-    can_focus = True
-
     def __init__(self, result: SearchResult, index: int, **kwargs) -> None:
-        super().__init__(**kwargs)
+        # Compact single-line preview
+        text = result.text.replace("\n", " ").strip()
+        if len(text) > 50:
+            text = text[:50] + "..."
+
+        label = (
+            f"[{index}] {result.file_path} (chunk {result.chunk_index})"
+            f" — {result.score:.2%}\n"
+            f"[dim]{text}[/dim]"
+        )
+        super().__init__(label, **kwargs)
         self.result = result
         self.index = index
 
-    def compose(self) -> ComposeResult:
-        text = self.result.text
-        if len(text) > 150:
-            text = text[:150] + "..."
-
-        with Vertical():
-            yield Label(
-                f"[{self.index}] {self.result.file_path} "
-                f"(chunk {self.result.chunk_index}) — "
-                f"[green]{self.result.score:.2%}[/green]",
-                classes="result-header",
-            )
-            yield Label(text, classes="result-text")
-
-    def on_click(self) -> None:
-        """Handle click on result."""
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle button press."""
+        event.stop()
         self.post_message(RecallSearch.ResultSelected(self.result))
-
-    def on_key(self, event) -> None:
-        """Handle key press."""
-        if event.key == "enter":
-            self.post_message(RecallSearch.ResultSelected(self.result))

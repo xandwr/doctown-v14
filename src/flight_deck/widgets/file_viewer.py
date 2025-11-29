@@ -4,11 +4,12 @@ FileViewer widget - displays file contents with syntax highlighting.
 Renders markdown natively, shows code with highlighting, and handles binary files.
 """
 
+import uuid
 from pathlib import PurePosixPath
 
 from textual.app import ComposeResult
-from textual.containers import Vertical
-from textual.widgets import Label, Markdown, Static, TextArea
+from textual.containers import VerticalScroll
+from textual.widgets import Label, MarkdownViewer, Static, TextArea
 
 
 class FileViewer(Static):
@@ -21,7 +22,7 @@ class FileViewer(Static):
         background: $surface;
     }
 
-    FileViewer > Vertical {
+    FileViewer > VerticalScroll {
         width: 100%;
         height: 100%;
     }
@@ -63,10 +64,9 @@ class FileViewer(Static):
         height: 100%;
     }
 
-    FileViewer Markdown {
+    FileViewer MarkdownViewer {
         width: 100%;
         height: 100%;
-        padding: 1 2;
     }
     """
 
@@ -76,9 +76,9 @@ class FileViewer(Static):
         self._current_content: str | None = None
 
     def compose(self) -> ComposeResult:
-        with Vertical():
+        with VerticalScroll():
             yield Label("No file selected", classes="file-header file-path", id="file-path")
-            with Vertical(classes="file-content", id="content-area"):
+            with VerticalScroll(classes="file-content", id="content-area"):
                 yield Label("Select a file to view its contents", classes="empty-state")
 
     def show_file(self, path: str, content: str | None, is_binary: bool = False) -> None:
@@ -91,7 +91,7 @@ class FileViewer(Static):
         header.update(f"📄 {path}")
 
         # Clear content area
-        content_area = self.query_one("#content-area", Vertical)
+        content_area = self.query_one("#content-area", VerticalScroll)
         content_area.remove_children()
 
         if is_binary:
@@ -108,14 +108,21 @@ class FileViewer(Static):
         ext = PurePosixPath(path).suffix.lower()
 
         if ext == ".md":
-            # Render markdown
-            content_area.mount(Markdown(content))
+            # Render markdown with TOC navigator
+            # Use unique ID to avoid conflicts when switching files
+            viewer = MarkdownViewer(
+                content,
+                show_table_of_contents=True,
+                id=f"md-viewer-{uuid.uuid4().hex[:8]}",
+            )
+            content_area.mount(viewer)
         else:
             # Show as code with TextArea (read-only)
             language = self._get_language(ext)
             text_area = TextArea(
                 content,
                 language=language,
+                theme="monokai",
                 read_only=True,
                 show_line_numbers=True,
                 classes="code-view",
@@ -153,19 +160,35 @@ class FileViewer(Static):
         return language_map.get(ext)
 
     def scroll_to_chunk(self, start_char: int | None, end_char: int | None) -> None:
-        """Scroll to highlight a specific chunk in the file."""
+        """Scroll to and highlight a specific chunk in the file."""
         if start_char is None or self._current_content is None:
             return
 
-        # Find the line number for the start position
-        content_before = self._current_content[:start_char]
-        line_number = content_before.count("\n")
+        # Calculate start position (line, column)
+        content_before_start = self._current_content[:start_char]
+        start_line = content_before_start.count("\n")
+        last_newline = content_before_start.rfind("\n")
+        start_col = start_char - last_newline - 1 if last_newline >= 0 else start_char
 
-        # Try to scroll the TextArea to that line
+        # Calculate end position if provided
+        if end_char is not None:
+            content_before_end = self._current_content[:end_char]
+            end_line = content_before_end.count("\n")
+            last_newline_end = content_before_end.rfind("\n")
+            end_col = end_char - last_newline_end - 1 if last_newline_end >= 0 else end_char
+        else:
+            # Default to selecting to end of line
+            end_line = start_line
+            line_end = self._current_content.find("\n", start_char)
+            end_col = line_end - start_char + start_col if line_end >= 0 else len(self._current_content) - start_char + start_col
+
+        # Try to scroll and select in the TextArea
         try:
             text_area = self.query_one(".code-view", TextArea)
-            # Move cursor to the line
-            text_area.cursor_location = (line_number, 0)
+            # Move cursor to start position
+            text_area.cursor_location = (start_line, start_col)
+            # Select the chunk range
+            text_area.selection = ((start_line, start_col), (end_line, end_col))
             text_area.scroll_cursor_visible()
         except Exception:
             pass  # TextArea might not exist (e.g., markdown file)
@@ -178,6 +201,6 @@ class FileViewer(Static):
         header = self.query_one("#file-path", Label)
         header.update("No file selected")
 
-        content_area = self.query_one("#content-area", Vertical)
+        content_area = self.query_one("#content-area", VerticalScroll)
         content_area.remove_children()
         content_area.mount(Label("Select a file to view its contents", classes="empty-state"))

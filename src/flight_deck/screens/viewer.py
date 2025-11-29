@@ -227,6 +227,9 @@ class ViewerScreen(Screen):
                 is_binary=file_record.get("is_binary", False),
             )
 
+            # Scroll to and highlight the matching chunk
+            self.set_timer(0.1, lambda: viewer.scroll_to_chunk(result.start_char, result.end_char))
+
             # Also select in tree
             file_tree = self.query_one("#file-tree", FileTree)
             file_tree.select_path(result.file_path)

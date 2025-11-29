@@ -127,7 +127,6 @@ class NotesPanel(Static):
             yield Label(
                 "No marginalia loaded",
                 classes="empty-message",
-                id="notes-empty",
             )
 
     def set_connection(self, conn: sqlite3.Connection) -> None:
@@ -142,15 +141,15 @@ class NotesPanel(Static):
 
         from docpack.storage.marginalia import (
             get_all_artifacts,
-            get_all_notes,
             get_all_sessions,
+            read_all_notes,
         )
 
         self._items = []
 
         # Load notes
         try:
-            notes = get_all_notes(self._conn)
+            notes = read_all_notes(self._conn)
             for note in notes:
                 self._items.append(
                     MarginaliaItem(
@@ -256,7 +255,6 @@ class NotesPanel(Static):
                 Label(
                     "No marginalia yet",
                     classes="empty-message",
-                    id="notes-empty",
                 )
             )
             return
@@ -302,6 +300,5 @@ class NotesPanel(Static):
             Label(
                 "No marginalia loaded",
                 classes="empty-message",
-                id="notes-empty",
             )
         )
