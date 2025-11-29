@@ -44,18 +44,23 @@ class FileTree(Tree):
 
     def __init__(self, **kwargs) -> None:
         super().__init__("📦 Files", **kwargs)
+        self.show_root = True
         self._files: list[dict[str, Any]] = []
         self._path_to_node: dict[str, TreeNode] = {}
+
+    def on_mount(self) -> None:
+        """Expand root when mounted."""
+        self.root.expand()
 
     def load_files(self, files: list[dict[str, Any]]) -> None:
         """Load files from docpack storage into the tree."""
         self._files = files
-        self.clear()
+        self.clear()  # Note: clear() creates a new root node
         self._path_to_node.clear()
 
-        # Build tree structure
-        root = self.root
-        root.expand()
+        # Build tree structure - must access self.root AFTER clear()
+        # because clear() replaces the root node
+        self.root.expand()
 
         # Sort files by path for consistent ordering
         sorted_files = sorted(files, key=lambda f: f["path"])
@@ -63,7 +68,7 @@ class FileTree(Tree):
         for file_info in sorted_files:
             path = file_info["path"]
             parts = PurePosixPath(path).parts
-            current_node = root
+            current_node = self.root
 
             # Create/traverse directory nodes
             for i, part in enumerate(parts[:-1]):
@@ -88,6 +93,9 @@ class FileTree(Tree):
                 },
             )
             self._path_to_node[path] = file_node
+
+        # Force a refresh to ensure the tree is rendered
+        self.refresh()
 
     def _get_file_icon(self, filename: str, is_binary: bool) -> str:
         """Get an appropriate icon for the file type."""

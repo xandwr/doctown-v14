@@ -77,24 +77,28 @@ class ViewerScreen(Screen):
     }
 
     ViewerScreen TabbedContent {
-        height: 100%;
+        height: 1fr;
+    }
+
+    ViewerScreen ContentSwitcher {
+        height: 1fr;
     }
 
     ViewerScreen TabPane {
         padding: 0;
-        height: 100%;
+        height: 1fr;
     }
 
     ViewerScreen FileTree {
-        height: 100%;
+        height: 1fr;
     }
 
     ViewerScreen RecallSearch {
-        height: 100%;
+        height: 1fr;
     }
 
     ViewerScreen InfoPanel {
-        height: 100%;
+        height: 1fr;
     }
 
     ViewerScreen .status-bar {
@@ -145,7 +149,8 @@ class ViewerScreen(Screen):
 
     def on_mount(self) -> None:
         """Load the docpack when the screen mounts."""
-        self._load_docpack()
+        # Delay loading slightly to ensure all widgets are fully mounted
+        self.set_timer(0.1, self._load_docpack)
 
     def _load_docpack(self) -> None:
         """Load the docpack and populate widgets."""

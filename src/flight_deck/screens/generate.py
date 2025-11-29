@@ -470,6 +470,26 @@ class GenerateScreen(Screen):
         if current_idx > 0:
             self.current_stage = stages[current_idx - 1]
 
+    @on(Button.Pressed, "#browse-btn")
+    def on_browse_pressed(self, event: Button.Pressed) -> None:
+        """Handle browse button - open path input dialog."""
+        from flight_deck.screens.path_input import PathInputScreen
+
+        def handle_result(path: Path | None) -> None:
+            if path is None:
+                return
+            # Update source path
+            self.source_path = str(path)
+            self.output_path = str(path.with_suffix(".docpack"))
+            # Update input field if on source stage
+            try:
+                source_input = self.query_one("#source-input", Input)
+                source_input.value = str(path)
+            except Exception:
+                pass
+
+        self.app.push_screen(PathInputScreen(), handle_result)
+
     @on(Input.Changed, "#source-input")
     def on_source_changed(self, event: Input.Changed) -> None:
         """Handle source path changes."""

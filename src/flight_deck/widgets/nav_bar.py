@@ -75,7 +75,7 @@ class NavBar(Static):
     NavBar .nav-btn {
         margin: 0 1;
         min-width: 12;
-        height: 1;
+        height: 3;
         border: none;
         background: transparent;
         color: $text-muted;
@@ -86,18 +86,6 @@ class NavBar(Static):
         color: $text;
     }
 
-    NavBar .nav-btn:focus {
-        background: $primary-darken-1;
-        color: $text;
-        text-style: bold;
-    }
-
-    NavBar .nav-btn.active {
-        background: $primary;
-        color: $text;
-        text-style: bold;
-    }
-
     NavBar .nav-btn-primary {
         background: $success;
         color: $text;
@@ -105,6 +93,22 @@ class NavBar(Static):
 
     NavBar .nav-btn-primary:hover {
         background: $success-darken-1;
+    }
+
+    /* Active state - the current page indicator */
+    NavBar .nav-btn.active {
+        background: $primary;
+        color: $text;
+        text-style: bold;
+    }
+
+    NavBar .nav-btn.active:hover {
+        background: $primary;
+    }
+
+    /* Primary button that is also active */
+    NavBar .nav-btn-primary.active {
+        background: $primary;
     }
     """
 
@@ -121,6 +125,7 @@ class NavBar(Static):
             yield Static("", classes="nav-spacer")
 
             # Navigation section (right)
+            # Buttons have can_focus=False to prevent focus-related highlighting issues
             with Horizontal(classes="nav-section"):
                 yield Button("📚 Commons", id="nav-commons", classes="nav-btn")
                 yield Button("⚡ Generate", id="nav-generate", classes="nav-btn nav-btn-primary")
@@ -153,4 +158,6 @@ class NavBar(Static):
         button_id = event.button.id or ""
         if button_id.startswith("nav-"):
             destination = button_id[4:]  # Remove "nav-" prefix
+            # Blur the button to prevent focus highlighting from persisting
+            event.button.blur()
             self.post_message(self.Navigate(destination))

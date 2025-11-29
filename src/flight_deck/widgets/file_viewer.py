@@ -118,7 +118,7 @@ class FileViewer(Static):
                 language=language,
                 read_only=True,
                 show_line_numbers=True,
-                id="code-view",
+                classes="code-view",
             )
             content_area.mount(text_area)
 
@@ -163,7 +163,7 @@ class FileViewer(Static):
 
         # Try to scroll the TextArea to that line
         try:
-            text_area = self.query_one("#code-view", TextArea)
+            text_area = self.query_one(".code-view", TextArea)
             # Move cursor to the line
             text_area.cursor_location = (line_number, 0)
             text_area.scroll_cursor_visible()
