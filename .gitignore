@@ -1,2 +1,8 @@
+
+# Dev
+/.claude
 .venv
 **/.venv
+**/__pycache__
+*.docpack
+**/*.docpack

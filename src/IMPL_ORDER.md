@@ -1,4 +1,12 @@
-1. **Storage Layer** (SQLite schema + wrapper) — the foundation
+## Quickstart:
+
+The project deps are managed with `uv` which is fucking awesome.
+
+`uv run docpack [abc]`
+
+---
+
+1. **Storage Layer** (SQLite schema + wrapper) — the foundation (🮱 DONE)
 
     You build:
     - storage.py

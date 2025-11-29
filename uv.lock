@@ -155,7 +155,7 @@ wheels = [
 [[package]]
 name = "doctown"
 version = "14.0.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "textual" },
     { name = "textual-dev" },
