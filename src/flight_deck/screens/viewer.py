@@ -19,9 +19,9 @@ from flight_deck.widgets import (
     FileTree,
     FileViewer,
     InfoPanel,
+    NavBar,
     RecallSearch,
     SearchResult,
-    TopBar,
 )
 
 
@@ -45,7 +45,15 @@ class ViewerScreen(Screen):
 
     ViewerScreen > Vertical {
         width: 100%;
-        height: 100%;
+        height: 1fr;
+    }
+
+    ViewerScreen .docpack-header {
+        width: 100%;
+        height: 1;
+        background: $primary-darken-1;
+        padding: 0 2;
+        text-style: bold;
     }
 
     ViewerScreen .main-container {
@@ -105,8 +113,14 @@ class ViewerScreen(Screen):
         self._sidebar_visible = True
 
     def compose(self) -> ComposeResult:
+        yield NavBar(active="explore")
+
         with Vertical():
-            yield TopBar(f"📦 {self.docpack_path.name}")
+            # Docpack name header
+            yield Label(
+                f"📦 {self.docpack_path.name}",
+                classes="docpack-header",
+            )
 
             with Horizontal(classes="main-container"):
                 # Sidebar with tabs

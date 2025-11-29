@@ -9,7 +9,9 @@ from .file_tree import FileTree
 from .file_viewer import FileViewer
 from .freeze_progress import FreezeProgress
 from .info_panel import InfoPanel
+from .nav_bar import NavBar
 from .recall_search import RecallSearch, SearchResult
+from .rocket_progress import RocketProgress
 from .top_bar import TopBar
 from .window import WindowLayout
 
@@ -19,7 +21,9 @@ __all__ = [
     "FileViewer",
     "FreezeProgress",
     "InfoPanel",
+    "NavBar",
     "RecallSearch",
+    "RocketProgress",
     "SearchResult",
     "TopBar",
     "WindowLayout",
