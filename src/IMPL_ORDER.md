@@ -22,7 +22,7 @@ The project deps are managed with `uv` which is fucking awesome.
 
 ---
 
-2. **Ingest** (filesystem walker + zip extractor) — the raw material
+2. **Ingest** (filesystem walker + zip extractor) — the raw material (🮱 DONE)
 
     Once storage exists, you implement:
     - ingest.py

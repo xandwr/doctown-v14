@@ -32,6 +32,7 @@ def cmd_freeze(args: argparse.Namespace) -> int:
             output=args.output,
             use_temp=args.temp,
             verbose=args.verbose,
+            skip_chunking=args.no_chunk,
         )
         if not args.verbose:
             print(f"Created: {output_path}")
@@ -122,6 +123,11 @@ def main() -> int:
         "--verbose",
         action="store_true",
         help="Print progress information",
+    )
+    freeze_parser.add_argument(
+        "--no-chunk",
+        action="store_true",
+        help="Skip chunking (raw ingestion only)",
     )
 
     # info

@@ -12,6 +12,7 @@ import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from docpack.chunk import chunk_all
 from docpack.storage import init_db, insert_file, set_metadata
 
 from .sources import DirectorySource, URLSource, ZipSource
@@ -87,19 +88,21 @@ def freeze(
     *,
     use_temp: bool = False,
     verbose: bool = False,
+    skip_chunking: bool = False,
 ) -> Path:
     """
     Freeze a target into a .docpack file.
 
     Ingests all files from the target source (directory, zip, URL)
-    and stores them in a SQLite database. This is raw ingestion -
-    no chunking or embedding is performed.
+    and stores them in a SQLite database. By default, text files are
+    also chunked for later embedding.
 
     Args:
         target: Path or URL to ingest
         output: Output .docpack path (default: derived from target)
         use_temp: If True, create in system temp dir (auto-cleanup)
         verbose: Print progress information
+        skip_chunking: If True, skip the chunking step (raw ingestion only)
 
     Returns:
         Path to created .docpack file
@@ -180,10 +183,21 @@ def freeze(
             set_metadata(conn, "source", target)
             set_metadata(conn, "file_count", str(file_count))
             set_metadata(conn, "total_bytes", str(total_bytes))
-            set_metadata(conn, "stage", "frozen")  # No chunks/embeddings yet
 
             if verbose:
                 print(f"\nFroze {file_count} files ({total_bytes:,} bytes)")
+
+            # Chunk text files
+            if not skip_chunking:
+                if verbose:
+                    print("\nChunking text files...")
+                chunk_count = chunk_all(conn, verbose=verbose)
+                if verbose:
+                    print(f"Created {chunk_count} chunks")
+            else:
+                set_metadata(conn, "stage", "frozen")  # No chunks yet
+
+            if verbose:
                 print(f"Output: {output_path}")
 
     finally:
