@@ -229,9 +229,12 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 def cmd_deck(args: argparse.Namespace) -> int:
     """Handle deck command."""
+    from pathlib import Path
+
     from flight_deck.app import FlightDeck
 
-    app = FlightDeck()
+    docpack_path = Path(args.docpack) if args.docpack else None
+    app = FlightDeck(docpack_path=docpack_path)
     app.run()
     return 0
 
